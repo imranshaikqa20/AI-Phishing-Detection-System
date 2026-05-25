@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+
+  margin: 0;
+
+  padding: 0;
+
+  background: linear-gradient(
+    to bottom right,
+    #0f172a,
+    #111827,
+    #000000
+  );
+
+  color: white;
+
+  font-family: Arial, sans-serif;
+}
