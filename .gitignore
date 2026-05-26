@@ -46,3 +46,15 @@ logs/
 
 .DS_Store
 Thumbs.db
+
+# =========================
+# OPTIONAL
+# =========================
+
+*.swp
+
+# =========================
+# SECRETS
+# =========================
+
+application-secret.properties

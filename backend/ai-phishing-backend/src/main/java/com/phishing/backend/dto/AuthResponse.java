@@ -6,11 +6,20 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+
 @Builder
+
 @NoArgsConstructor
+
 @AllArgsConstructor
 
 public class AuthResponse {
+
+    // =========================
+    // RESPONSE STATUS
+    // =========================
+
+    private boolean success;
 
     // =========================
     // RESPONSE MESSAGE
@@ -23,6 +32,14 @@ public class AuthResponse {
     // =========================
 
     private String token;
+
+    // =========================
+    // TOKEN TYPE
+    // =========================
+
+    @Builder.Default
+
+    private String tokenType = "Bearer";
 
     // =========================
     // USER ROLE
@@ -55,4 +72,16 @@ public class AuthResponse {
     // =========================
 
     private int loginCount;
+
+    // =========================
+    // LAST LOGIN TIME
+    // =========================
+
+    private String lastLoginAt;
+
+    // =========================
+    // OPTIONAL REFRESH TOKEN
+    // =========================
+
+    private String refreshToken;
 }

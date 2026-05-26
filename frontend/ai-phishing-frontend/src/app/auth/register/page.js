@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
 import { useRouter } from "next/navigation";
 
-import api from "../../../services/api";
+import api, {
+
+  isAuthenticated
+
+} from "../../../services/api";
 
 export default function RegisterPage() {
 
@@ -25,6 +29,13 @@ export default function RegisterPage() {
   const [password, setPassword] =
     useState("");
 
+  // =========================
+  // ROLE STATE
+  // =========================
+
+  const [role, setRole] =
+    useState("ROLE_USER");
+
   const [loading, setLoading] =
     useState(false);
 
@@ -33,6 +44,46 @@ export default function RegisterPage() {
 
   const [success, setSuccess] =
     useState(false);
+
+  // =========================
+  // AUTO REDIRECT
+  // IF ALREADY LOGGED IN
+  // =========================
+
+  useEffect(() => {
+
+    if (isAuthenticated()) {
+
+      const userRole =
+        localStorage.getItem(
+          "role"
+        );
+
+      // =========================
+      // ADMIN REDIRECT
+      // =========================
+
+      if (
+        userRole ===
+        "ROLE_ADMIN"
+      ) {
+
+        router.push("/admin");
+      }
+
+      // =========================
+      // USER REDIRECT
+      // =========================
+
+      else {
+
+        router.push(
+          "/dashboard"
+        );
+      }
+    }
+
+  }, [router]);
 
   // =========================
   // HANDLE REGISTER
@@ -48,29 +99,55 @@ export default function RegisterPage() {
 
     try {
 
+      // =========================
+      // REGISTER API
+      // =========================
+
       const response = await api.post(
+
         "/auth/register",
+
         {
           name,
           email,
           password,
+          role,
         }
       );
 
       console.log(response.data);
 
+      // =========================
+      // SUCCESS
+      // =========================
+
       setSuccess(true);
 
       setMessage(
+
         response.data.message ||
+
         "Registration Successful"
       );
 
-      // Redirect to Login
+      // =========================
+      // SAVE TEMP EMAIL
+      // =========================
+
+      localStorage.setItem(
+        "registeredEmail",
+        email
+      );
+
+      // =========================
+      // REDIRECT TO LOGIN
+      // =========================
 
       setTimeout(() => {
 
-        router.push("/auth/login");
+        router.push(
+          "/auth/login"
+        );
 
       }, 1500);
 
@@ -80,8 +157,14 @@ export default function RegisterPage() {
 
       setSuccess(false);
 
+      // =========================
+      // ERROR MESSAGE
+      // =========================
+
       setMessage(
+
         error.response?.data?.message ||
+
         "Registration Failed"
       );
 
@@ -107,7 +190,9 @@ export default function RegisterPage() {
       "
     >
 
-      {/* Register Card */}
+      {/* =========================
+          REGISTER CARD
+      ========================= */}
 
       <div
         className="
@@ -123,7 +208,9 @@ export default function RegisterPage() {
         "
       >
 
-        {/* Heading */}
+        {/* =========================
+            HEADING
+        ========================= */}
 
         <h1
           className="
@@ -147,18 +234,23 @@ export default function RegisterPage() {
           Join AI Phishing Detection
         </p>
 
-        {/* Form */}
+        {/* =========================
+            REGISTER FORM
+        ========================= */}
 
         <form onSubmit={handleRegister}>
 
-          {/* Name */}
+          {/* NAME */}
 
           <input
             type="text"
             placeholder="Enter your name"
             value={name}
             onChange={(e) =>
-              setName(e.target.value)
+
+              setName(
+                e.target.value
+              )
             }
             className="
               w-full
@@ -177,14 +269,17 @@ export default function RegisterPage() {
             required
           />
 
-          {/* Email */}
+          {/* EMAIL */}
 
           <input
             type="email"
             placeholder="Enter your email"
             value={email}
             onChange={(e) =>
-              setEmail(e.target.value)
+
+              setEmail(
+                e.target.value
+              )
             }
             className="
               w-full
@@ -203,14 +298,17 @@ export default function RegisterPage() {
             required
           />
 
-          {/* Password */}
+          {/* PASSWORD */}
 
           <input
             type="password"
             placeholder="Enter your password"
             value={password}
             onChange={(e) =>
-              setPassword(e.target.value)
+
+              setPassword(
+                e.target.value
+              )
             }
             className="
               w-full
@@ -221,7 +319,7 @@ export default function RegisterPage() {
               border-white/20
               text-white
               placeholder-gray-300
-              mb-6
+              mb-4
               outline-none
               focus:ring-2
               focus:ring-green-400
@@ -229,7 +327,48 @@ export default function RegisterPage() {
             required
           />
 
-          {/* Register Button */}
+          {/* ROLE */}
+
+          <select
+            value={role}
+            onChange={(e) =>
+
+              setRole(
+                e.target.value
+              )
+            }
+            className="
+              w-full
+              p-4
+              rounded-xl
+              bg-white/10
+              border
+              border-white/20
+              text-white
+              mb-6
+              outline-none
+              focus:ring-2
+              focus:ring-yellow-400
+            "
+          >
+
+            <option
+              value="ROLE_USER"
+              className="text-black"
+            >
+              User
+            </option>
+
+            <option
+              value="ROLE_ADMIN"
+              className="text-black"
+            >
+              Admin
+            </option>
+
+          </select>
+
+          {/* REGISTER BUTTON */}
 
           <button
             type="submit"
@@ -247,12 +386,15 @@ export default function RegisterPage() {
               transition
               duration-300
               shadow-lg
+              disabled:opacity-50
             "
           >
 
             {
               loading
-                ? "Registering..."
+
+                ? "Creating Account..."
+
                 : "Register"
             }
 
@@ -260,7 +402,9 @@ export default function RegisterPage() {
 
         </form>
 
-        {/* Message */}
+        {/* =========================
+            RESPONSE MESSAGE
+        ========================= */}
 
         {
           message && (
@@ -274,7 +418,9 @@ export default function RegisterPage() {
                 font-medium
                 ${
                   success
+
                     ? "bg-green-500/20 text-green-300"
+
                     : "bg-red-500/20 text-red-300"
                 }
               `}
@@ -284,7 +430,9 @@ export default function RegisterPage() {
           )
         }
 
-        {/* Login Section */}
+        {/* =========================
+            LOGIN SECTION
+        ========================= */}
 
         <div
           className="

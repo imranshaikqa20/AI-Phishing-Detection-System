@@ -2,6 +2,7 @@ package com.phishing.backend.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import lombok.AllArgsConstructor;
@@ -10,8 +11,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+
 @Builder
+
 @NoArgsConstructor
+
 @AllArgsConstructor
 
 public class RegisterRequest {
@@ -27,7 +31,8 @@ public class RegisterRequest {
     @Size(
             min = 3,
             max = 50,
-            message = "Name must be between 3 and 50 characters"
+            message =
+                    "Name must be between 3 and 50 characters"
     )
 
     private String name;
@@ -56,8 +61,34 @@ public class RegisterRequest {
 
     @Size(
             min = 6,
-            message = "Password must be at least 6 characters"
+            message =
+                    "Password must be at least 6 characters"
+    )
+
+    @Pattern(
+
+            regexp =
+                    "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@#$%^&+=!]).{6,}$",
+
+            message =
+                    "Password must contain uppercase, lowercase, number and special character"
     )
 
     private String password;
+
+    // =========================
+    // USER ROLE
+    // =========================
+
+    @NotBlank(
+            message = "Role is required"
+    )
+
+    @Pattern(
+            regexp = "ROLE_USER|ROLE_ADMIN",
+            message =
+                    "Role must be ROLE_USER or ROLE_ADMIN"
+    )
+
+    private String role;
 }

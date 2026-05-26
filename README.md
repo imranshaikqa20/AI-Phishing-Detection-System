@@ -1,192 +1,46 @@
-\# AI Phishing Detection System
+# AI Phishing Detection System
 
+AI Phishing Detection System is a full-stack cybersecurity platform built using Spring Boot, PostgreSQL, Next.js, and Tailwind CSS.
 
+## Features
 
-AI-powered phishing URL detection platform using Spring Boot, Next.js, PostgreSQL, JWT Authentication, and Cybersecurity APIs.
+- User Authentication
+- Admin Dashboard
+- Role-Based Access
+- URL Scan Module
+- Malware Detection
+- Security Reports
+- Analytics Dashboard
+- User Management
 
+## Tech Stack
 
+### Frontend
+- Next.js
+- Tailwind CSS
+- Axios
 
-\---
+### Backend
+- Spring Boot
+- Spring Security
+- PostgreSQL
+- Hibernate / JPA
 
+## Roles
 
+### User
+- Login/Register
+- Scan URLs
+- View Dashboard
 
-\## Features
+### Admin
+- Manage Users
+- View Reports
+- Analytics Dashboard
+- Monitor Security Activity
 
-
-
-\- User Registration \& Login
-
-\- JWT Authentication
-
-\- URL Phishing Detection
-
-\- Malware Detection
-
-\- Dashboard Analytics
-
-\- Scan Reports
-
-\- PostgreSQL Database
-
-\- Responsive Modern UI
-
-\- Role-Based Access Control
-
-
-
-\---
-
-
-
-\## Tech Stack
-
-
-
-\### Frontend
-
-\- Next.js
-
-\- Tailwind CSS
-
-\- Axios
-
-
-
-\### Backend
-
-\- Spring Boot
-
-\- Spring Security
-
-\- JWT Authentication
-
-\- JPA / Hibernate
-
-
-
-\### Database
-
-\- PostgreSQL
-
-
-
-\---
-
-
-
-\## Project Structure
-
-
+## Run Frontend
 
 ```bash
-
-Frontend  -> Next.js
-
-Backend   -> Spring Boot
-
-Database  -> PostgreSQL
-
-```
-
-
-
-\---
-
-
-
-\## Installation
-
-
-
-\### Frontend
-
-
-
-```bash
-
 npm install
-
 npm run dev
-
-```
-
-
-
-\### Backend
-
-
-
-```bash
-
-mvn spring-boot:run
-
-```
-
-
-
-\---
-
-
-
-\## API Endpoints
-
-
-
-\### Authentication
-
-
-
-```bash
-
-POST /api/auth/register
-
-POST /api/auth/login
-
-```
-
-
-
-\### URL Scan
-
-
-
-```bash
-
-POST /api/scan/url
-
-```
-
-
-
-\---
-
-
-
-\## Future Improvements
-
-
-
-\- AI/ML Model Integration
-
-\- Real-time Threat Detection
-
-\- VirusTotal API Integration
-
-\- Google Safe Browsing API
-
-\- PDF Report Generation
-
-\- Admin Panel
-
-
-
-\---
-
-
-
-\## Author
-
-
-
-Shaik Imran
-

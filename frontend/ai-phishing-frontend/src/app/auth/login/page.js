@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
 import { useRouter } from "next/navigation";
 
-import api from "../../../services/api";
+import api, {
+
+  saveUserSession,
+
+  isAuthenticated
+
+} from "../../../services/api";
 
 export default function LoginPage() {
 
@@ -32,6 +38,42 @@ export default function LoginPage() {
     useState(false);
 
   // =========================
+  // AUTO REDIRECT IF LOGGED IN
+  // =========================
+
+  useEffect(() => {
+
+    if (isAuthenticated()) {
+
+      const role =
+        localStorage.getItem(
+          "role"
+        );
+
+      // =========================
+      // ADMIN REDIRECT
+      // =========================
+
+      if (
+        role === "ROLE_ADMIN"
+      ) {
+
+        router.push("/admin");
+      }
+
+      // =========================
+      // USER REDIRECT
+      // =========================
+
+      else {
+
+        router.push("/dashboard");
+      }
+    }
+
+  }, [router]);
+
+  // =========================
   // HANDLE LOGIN
   // =========================
 
@@ -45,8 +87,14 @@ export default function LoginPage() {
 
     try {
 
+      // =========================
+      // LOGIN API
+      // =========================
+
       const response = await api.post(
+
         "/auth/login",
+
         {
           email,
           password,
@@ -55,27 +103,59 @@ export default function LoginPage() {
 
       console.log(response.data);
 
-      // Store Token
+      // =========================
+      // SAVE JWT SESSION
+      // =========================
 
-      localStorage.setItem(
-        "token",
-        "loggedin"
+      saveUserSession(
+        response.data
       );
+
+      // =========================
+      // SUCCESS MESSAGE
+      // =========================
 
       setSuccess(true);
 
       setMessage(
+
         response.data.message ||
+
         "Login Successful"
       );
 
-      // Redirect
+      // =========================
+      // ROLE BASED REDIRECT
+      // =========================
 
       setTimeout(() => {
 
-        router.push("/dashboard");
+        // =========================
+        // ADMIN
+        // =========================
 
-      }, 1500);
+        if (
+
+          response.data.role ===
+          "ROLE_ADMIN"
+
+        ) {
+
+          router.push("/admin");
+        }
+
+        // =========================
+        // NORMAL USER
+        // =========================
+
+        else {
+
+          router.push(
+            "/dashboard"
+          );
+        }
+
+      }, 1200);
 
     } catch (error) {
 
@@ -83,8 +163,14 @@ export default function LoginPage() {
 
       setSuccess(false);
 
+      // =========================
+      // ERROR MESSAGE
+      // =========================
+
       setMessage(
+
         error.response?.data?.message ||
+
         "Login Failed"
       );
 
@@ -110,7 +196,9 @@ export default function LoginPage() {
       "
     >
 
-      {/* Login Card */}
+      {/* =========================
+          LOGIN CARD
+      ========================= */}
 
       <div
         className="
@@ -126,7 +214,9 @@ export default function LoginPage() {
         "
       >
 
-        {/* Heading */}
+        {/* =========================
+            HEADING
+        ========================= */}
 
         <h1
           className="
@@ -150,18 +240,23 @@ export default function LoginPage() {
           AI Phishing Detection System
         </p>
 
-        {/* Form */}
+        {/* =========================
+            LOGIN FORM
+        ========================= */}
 
         <form onSubmit={handleLogin}>
 
-          {/* Email */}
+          {/* EMAIL */}
 
           <input
             type="email"
             placeholder="Enter your email"
             value={email}
             onChange={(e) =>
-              setEmail(e.target.value)
+
+              setEmail(
+                e.target.value
+              )
             }
             className="
               w-full
@@ -180,14 +275,17 @@ export default function LoginPage() {
             required
           />
 
-          {/* Password */}
+          {/* PASSWORD */}
 
           <input
             type="password"
             placeholder="Enter your password"
             value={password}
             onChange={(e) =>
-              setPassword(e.target.value)
+
+              setPassword(
+                e.target.value
+              )
             }
             className="
               w-full
@@ -206,7 +304,7 @@ export default function LoginPage() {
             required
           />
 
-          {/* Login Button */}
+          {/* LOGIN BUTTON */}
 
           <button
             type="submit"
@@ -224,12 +322,15 @@ export default function LoginPage() {
               transition
               duration-300
               shadow-lg
+              disabled:opacity-50
             "
           >
 
             {
               loading
-                ? "Logging In..."
+
+                ? "Authenticating..."
+
                 : "Login"
             }
 
@@ -237,7 +338,9 @@ export default function LoginPage() {
 
         </form>
 
-        {/* Message */}
+        {/* =========================
+            RESPONSE MESSAGE
+        ========================= */}
 
         {
           message && (
@@ -251,7 +354,9 @@ export default function LoginPage() {
                 font-medium
                 ${
                   success
+
                     ? "bg-green-500/20 text-green-300"
+
                     : "bg-red-500/20 text-red-300"
                 }
               `}
@@ -261,7 +366,9 @@ export default function LoginPage() {
           )
         }
 
-        {/* Sign Up Section */}
+        {/* =========================
+            REGISTER SECTION
+        ========================= */}
 
         <div
           className="
