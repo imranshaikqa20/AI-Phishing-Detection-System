@@ -1,374 +1,187 @@
 import axios from "axios";
 
-// =========================
-// CREATE AXIOS INSTANCE
-// =========================
-
+// API INSTANCE
 const api = axios.create({
-
-  // =========================
-  // BACKEND BASE URL
-  // =========================
-
-  baseURL:
-    "http://localhost:8080/api",
-
-  // =========================
-  // REQUEST TIMEOUT
-  // =========================
-
-  timeout: 10000,
-
-  // =========================
-  // DEFAULT HEADERS
-  // =========================
-
+  baseURL: "http://localhost:8080/api",
+  timeout: 15000,
   headers: {
-
-    "Content-Type":
-      "application/json",
+    "Content-Type": "application/json",
   },
 });
 
-// =========================
+// SAFE LOCAL STORAGE HELPERS
+const isBrowser = () => {
+  return typeof window !== "undefined";
+};
+
+const getStorageItem = (key) => {
+  if (!isBrowser()) return null;
+  return localStorage.getItem(key);
+};
+
+const setStorageItem = (key, value) => {
+  if (!isBrowser()) return;
+  localStorage.setItem(key, value);
+};
+
+const removeStorageItem = (key) => {
+  if (!isBrowser()) return;
+  localStorage.removeItem(key);
+};
+
 // REQUEST INTERCEPTOR
-// AUTO ATTACH JWT TOKEN
-// =========================
-
 api.interceptors.request.use(
-
   (config) => {
-
-    // =========================
-    // CHECK BROWSER
-    // =========================
-
-    if (
-      typeof window !==
-      "undefined"
-    ) {
-
-      // =========================
-      // GET JWT TOKEN
-      // =========================
-
-      const token =
-
-        localStorage.getItem(
-          "token"
-        );
-
-      // =========================
-      // ADD AUTHORIZATION HEADER
-      // =========================
-
-      if (token) {
-
-        config.headers.Authorization =
-
-          `Bearer ${token}`;
-      }
+    const token = getStorageItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-
     return config;
   },
-
-  (error) => {
-
-    return Promise.reject(
-      error
-    );
-  }
+  (error) => Promise.reject(error)
 );
 
-// =========================
 // RESPONSE INTERCEPTOR
-// HANDLE JWT + API ERRORS
-// =========================
-
 api.interceptors.response.use(
-
-  // =========================
-  // SUCCESS RESPONSE
-  // =========================
-
-  (response) => {
-
-    return response;
-  },
-
-  // =========================
-  // ERROR RESPONSE
-  // =========================
-
+  (response) => response,
   (error) => {
+    const status = error.response?.status;
 
-    // =========================
-    // RESPONSE STATUS
-    // =========================
-
-    const status =
-      error.response?.status;
-
-    // =========================
-    // UNAUTHORIZED
-    // INVALID / EXPIRED TOKEN
-    // =========================
-
+    // 401 - Unauthorized
     if (status === 401) {
-
-      console.log(
-        "Unauthorized Access"
-      );
-
-      // =========================
-      // CLEAR STORED DATA
-      // =========================
-
-      if (
-        typeof window !==
-        "undefined"
-      ) {
-
-        localStorage.removeItem(
-          "token"
-        );
-
-        localStorage.removeItem(
-          "role"
-        );
-
-        localStorage.removeItem(
-          "name"
-        );
-
-        localStorage.removeItem(
-          "email"
-        );
-
-        localStorage.removeItem(
-          "loginCount"
-        );
-
-        localStorage.removeItem(
-          "lastLoginAt"
-        );
+      console.log("Unauthorized - clearing session");
+      clearUserSession();
+      if (isBrowser()) {
+        window.location.href = "/auth/login";
       }
-
-      // =========================
-      // REDIRECT TO LOGIN
-      // =========================
-
-      window.location.href =
-        "/auth/login";
     }
 
-    // =========================
-    // ACCESS FORBIDDEN
-    // =========================
-
+    // 403 - Forbidden
     if (status === 403) {
+      alert("Access Forbidden");
+    }
 
-      console.log(
-        "Access Forbidden"
-      );
-
+    // 429 - Rate limit
+    if (status === 429) {
       alert(
-        "You are not authorized to access this resource."
+        error.response?.data?.message || "Daily Limit Reached"
       );
     }
 
-    // =========================
-    // SERVER ERROR
-    // =========================
-
+    // 500 - Server error
     if (status === 500) {
-
-      console.log(
-        "Internal Server Error"
-      );
-
       alert(
-        "Server Error Occurred"
+        error.response?.data?.message || "Internal Server Error"
       );
     }
 
-    // =========================
-    // NETWORK ERROR
-    // =========================
-
-    if (
-      error.code ===
-      "ERR_NETWORK"
-    ) {
-
-      console.log(
-        "Backend Server Not Running"
-      );
-
-      alert(
-        "Cannot connect to backend server."
-      );
+    // Network error
+    if (error.code === "ERR_NETWORK") {
+      alert("Backend Server Not Running");
     }
 
-    // =========================
-    // REQUEST TIMEOUT
-    // =========================
-
-    if (
-      error.code ===
-      "ECONNABORTED"
-    ) {
-
-      console.log(
-        "Request Timeout"
-      );
-
-      alert(
-        "Request Timeout. Try Again."
-      );
-    }
-
-    // =========================
-    // RETURN ERROR
-    // =========================
-
-    return Promise.reject(
-      error
-    );
+    return Promise.reject(error);
   }
 );
 
-// =========================
-// HELPER METHODS
-// =========================
+// AUTH APIs
+export const loginUser = (loginData) => {
+  return api.post("/auth/login", loginData);
+};
 
-// =========================
+export const registerUser = (registerData) => {
+  return api.post("/auth/register", registerData);
+};
+
+// SCAN APIs
+export const analyzeContent = (data) => {
+  return api.post("/scan/analyze", data);
+};
+
+export const uploadAndScanFile = (formData) => {
+  return api.post("/scan/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
+
+export const getScanHistory = () => {
+  return api.get("/scan/history");
+};
+
+export const getDashboardMetrics = () => {
+  return api.get("/scan/metrics");
+};
+
 // SAVE USER SESSION
-// =========================
+export const saveUserSession = (data) => {
+  console.log("LOGIN RESPONSE:", data);
 
-export const saveUserSession = (
-
-  data
-
-) => {
-
-  localStorage.setItem(
-    "token",
-    data.token
-  );
-
-  localStorage.setItem(
-    "role",
-    data.role
-  );
-
-  localStorage.setItem(
-    "name",
-    data.name
-  );
-
-  localStorage.setItem(
-    "email",
-    data.email
-  );
-
-  localStorage.setItem(
-    "loginCount",
-    data.loginCount
-  );
-
-  localStorage.setItem(
-    "lastLoginAt",
-    data.lastLoginAt
-  );
-};
-
-// =========================
-// CLEAR USER SESSION
-// =========================
-
-export const clearUserSession = () => {
-
-  localStorage.removeItem(
-    "token"
-  );
-
-  localStorage.removeItem(
-    "role"
-  );
-
-  localStorage.removeItem(
-    "name"
-  );
-
-  localStorage.removeItem(
-    "email"
-  );
-
-  localStorage.removeItem(
-    "loginCount"
-  );
-
-  localStorage.removeItem(
-    "lastLoginAt"
-  );
-};
-
-// =========================
-// CHECK AUTHENTICATION
-// =========================
-
-export const isAuthenticated = () => {
-
-  if (
-    typeof window ===
-    "undefined"
-  ) {
-
-    return false;
+  // JWT Token
+  if (data.token) {
+    setStorageItem("token", data.token);
   }
 
-  return !!localStorage.getItem(
-    "token"
-  );
+  const resolvedUserId = data.userId ?? data.id ?? null;
+  if (resolvedUserId !== null && resolvedUserId !== undefined) {
+    setStorageItem("userId", String(resolvedUserId));
+  }
+
+  // Name
+  if (data.name) {
+    setStorageItem("name", data.name);
+  }
+
+  // Email
+  if (data.email) {
+    setStorageItem("email", data.email);
+  }
+
+  // Role
+  if (data.role) {
+    setStorageItem("role", data.role);
+  }
+
+  // Login count
+  if (data.loginCount !== undefined && data.loginCount !== null) {
+    setStorageItem("loginCount", String(data.loginCount));
+  }
+
+  // Last login timestamp
+  if (data.lastLoginAt) {
+    setStorageItem("lastLoginAt", data.lastLoginAt);
+  }
 };
 
-// =========================
-// CHECK ADMIN ROLE
-// =========================
+// CLEAR SESSION
+export const clearUserSession = () => {
+  removeStorageItem("token");
+  removeStorageItem("userId");
+  removeStorageItem("name");
+  removeStorageItem("email");
+  removeStorageItem("role");
+  removeStorageItem("loginCount");
+  removeStorageItem("lastLoginAt");
+};
+
+// AUTH CHECKS
+export const isAuthenticated = () => {
+  return !!getStorageItem("token");
+};
 
 export const isAdmin = () => {
-
-  if (
-    typeof window ===
-    "undefined"
-  ) {
-
-    return false;
-  }
-
-  return (
-
-    localStorage.getItem(
-      "role"
-    ) === "ROLE_ADMIN"
-  );
+  return getStorageItem("role") === "ROLE_ADMIN";
 };
 
-// =========================
-// GET TOKEN
-// =========================
-
+// GETTERS
 export const getToken = () => {
-
-  return localStorage.getItem(
-    "token"
-  );
+  return getStorageItem("token");
 };
 
-// =========================
-// EXPORT AXIOS INSTANCE
-// =========================
+export const getUserId = () => {
+  return getStorageItem("userId");
+};
 
+// EXPORT DEFAULT
 export default api;

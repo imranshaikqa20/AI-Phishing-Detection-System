@@ -2,20 +2,95 @@
 @tailwind components;
 @tailwind utilities;
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
-
   margin: 0;
-
   padding: 0;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    system-ui,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
 
-  background: linear-gradient(
-    to bottom right,
-    #0f172a,
-    #111827,
-    #000000
-  );
+html,
+html.dark-mode,
+html[data-theme="dark"] {
+  color-scheme: dark;
+  background-color: #080c10;
+  color: #ffffff;
+}
 
-  color: white;
+html.light-mode,
+html[data-theme="light"] {
+  color-scheme: light;
+  background-color: #f9fafb;
+  color: #111827;
+}
 
-  font-family: Arial, sans-serif;
+html.dark-mode ::-webkit-scrollbar,
+html[data-theme="dark"] ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+html.dark-mode ::-webkit-scrollbar-track,
+html[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb,
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb:hover,
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+html.light-mode ::-webkit-scrollbar,
+html[data-theme="light"] ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+html.light-mode ::-webkit-scrollbar-track,
+html[data-theme="light"] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html.light-mode ::-webkit-scrollbar-thumb,
+html[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+}
+
+html.light-mode ::-webkit-scrollbar-thumb:hover,
+html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+html.dark-mode ::selection,
+html[data-theme="dark"] ::selection {
+  background: rgba(239, 68, 68, 0.3);
+  color: #ffffff;
+}
+
+html.light-mode ::selection,
+html[data-theme="light"] ::selection {
+  background: rgba(239, 68, 68, 0.15);
+  color: #111827;
 }

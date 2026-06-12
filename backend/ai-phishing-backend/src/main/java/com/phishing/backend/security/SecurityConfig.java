@@ -2,62 +2,42 @@ package com.phishing.backend.security;
 
 import com.phishing.backend.jwt.JwtAuthenticationEntryPoint;
 import com.phishing.backend.jwt.JwtAuthenticationFilter;
-
-import org.springframework.beans.factory.annotation.Autowired;
-
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import org.springframework.security.authentication.AuthenticationManager;
-
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-
 import org.springframework.security.config.http.SessionCreationPolicy;
-
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import org.springframework.security.web.SecurityFilterChain;
-
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.*;
 
 import java.util.List;
 
 @Configuration
-
 @EnableMethodSecurity
-
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    // =========================
-    // JWT AUTH FILTER
-    // =========================
+    // =========================================
+    // JWT FILTER
+    // =========================================
 
-    @Autowired
-    private JwtAuthenticationFilter
-            jwtAuthenticationFilter;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    // =========================
-    // JWT ENTRY POINT
-    // =========================
+    // =========================================
+    // AUTH ENTRY POINT
+    // =========================================
 
-    @Autowired
-    private JwtAuthenticationEntryPoint
-            jwtAuthenticationEntryPoint;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
-    // =========================
+    // =========================================
     // PASSWORD ENCODER
-    // =========================
+    // =========================================
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -65,23 +45,23 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // =========================
+    // =========================================
     // AUTHENTICATION MANAGER
-    // =========================
+    // =========================================
 
     @Bean
     public AuthenticationManager authenticationManager(
 
-            AuthenticationConfiguration config
+            AuthenticationConfiguration configuration
 
     ) throws Exception {
 
-        return config.getAuthenticationManager();
+        return configuration.getAuthenticationManager();
     }
 
-    // =========================
+    // =========================================
     // SECURITY FILTER CHAIN
-    // =========================
+    // =========================================
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -92,15 +72,15 @@ public class SecurityConfig {
 
         http
 
-                // =========================
+                // =========================================
                 // DISABLE CSRF
-                // =========================
+                // =========================================
 
                 .csrf(csrf -> csrf.disable())
 
-                // =========================
+                // =========================================
                 // ENABLE CORS
-                // =========================
+                // =========================================
 
                 .cors(cors ->
 
@@ -109,9 +89,9 @@ public class SecurityConfig {
                         )
                 )
 
-                // =========================
+                // =========================================
                 // STATELESS SESSION
-                // =========================
+                // =========================================
 
                 .sessionManagement(session ->
 
@@ -120,9 +100,9 @@ public class SecurityConfig {
                         )
                 )
 
-                // =========================
-                // EXCEPTION HANDLER
-                // =========================
+                // =========================================
+                // JWT EXCEPTION HANDLER
+                // =========================================
 
                 .exceptionHandling(exception ->
 
@@ -131,39 +111,63 @@ public class SecurityConfig {
                         )
                 )
 
-                // =========================
-                // REQUEST AUTHORIZATION
-                // =========================
+                // =========================================
+                // AUTHORIZATION RULES
+                // =========================================
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // =========================
+                        // =========================================
                         // PUBLIC APIs
-                        // =========================
+                        // =========================================
 
                         .requestMatchers(
 
                                 "/api/auth/**",
 
+                                "/api/public/**",
+
                                 "/error"
 
                         ).permitAll()
 
-                        // =========================
-                        // SWAGGER APIs
-                        // =========================
+                        // =========================================
+                        // SWAGGER / API DOCS
+                        // =========================================
 
                         .requestMatchers(
 
                                 "/swagger-ui/**",
 
+                                "/swagger-ui.html",
+
                                 "/v3/api-docs/**"
 
                         ).permitAll()
 
-                        // =========================
+                        // =========================================
+                        // ACTUATOR
+                        // =========================================
+
+                        .requestMatchers(
+
+                                "/actuator/**"
+
+                        ).permitAll()
+
+                        // =========================================
+                        // STRIPE WEBHOOK
+                        // =========================================
+
+                        .requestMatchers(
+
+                                "/api/payment/webhook"
+
+                        ).permitAll()
+
+                        // =========================================
                         // ADMIN APIs
-                        // =========================
+                        // =========================================
 
                         .requestMatchers(
 
@@ -173,15 +177,19 @@ public class SecurityConfig {
                                 "ROLE_ADMIN"
                         )
 
-                        // =========================
+                        // =========================================
                         // USER APIs
-                        // =========================
+                        // =========================================
 
                         .requestMatchers(
 
                                 "/api/dashboard/**",
 
-                                "/api/scan/**"
+                                "/api/scan/**",
+
+                                "/api/payment/**",
+
+                                "/api/profile/**"
 
                         ).hasAnyAuthority(
 
@@ -190,17 +198,17 @@ public class SecurityConfig {
                                 "ROLE_ADMIN"
                         )
 
-                        // =========================
+                        // =========================================
                         // ALL OTHER REQUESTS
-                        // =========================
+                        // =========================================
 
                         .anyRequest()
                         .authenticated()
                 )
 
-                // =========================
-                // ADD JWT FILTER
-                // =========================
+                // =========================================
+                // JWT FILTER
+                // =========================================
 
                 .addFilterBefore(
 
@@ -212,32 +220,33 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // =========================
+    // =========================================
     // CORS CONFIGURATION
-    // =========================
+    // =========================================
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration configuration =
-
                 new CorsConfiguration();
 
-        // =========================
+        // =========================================
         // ALLOWED ORIGINS
-        // =========================
+        // =========================================
 
         configuration.setAllowedOrigins(
 
                 List.of(
 
-                        "http://localhost:3000"
+                        "http://localhost:3000",
+
+                        "http://127.0.0.1:3000"
                 )
         );
 
-        // =========================
+        // =========================================
         // ALLOWED METHODS
-        // =========================
+        // =========================================
 
         configuration.setAllowedMethods(
 
@@ -251,22 +260,24 @@ public class SecurityConfig {
 
                         "DELETE",
 
+                        "PATCH",
+
                         "OPTIONS"
                 )
         );
 
-        // =========================
+        // =========================================
         // ALLOWED HEADERS
-        // =========================
+        // =========================================
 
         configuration.setAllowedHeaders(
 
                 List.of("*")
         );
 
-        // =========================
+        // =========================================
         // EXPOSE HEADERS
-        // =========================
+        // =========================================
 
         configuration.setExposedHeaders(
 
@@ -276,28 +287,27 @@ public class SecurityConfig {
                 )
         );
 
-        // =========================
+        // =========================================
         // ALLOW CREDENTIALS
-        // =========================
+        // =========================================
 
         configuration.setAllowCredentials(
                 true
         );
 
-        // =========================
-        // CACHE PREFLIGHT
-        // =========================
+        // =========================================
+        // PREFLIGHT CACHE
+        // =========================================
 
         configuration.setMaxAge(
                 3600L
         );
 
-        // =========================
+        // =========================================
         // REGISTER CONFIG
-        // =========================
+        // =========================================
 
         UrlBasedCorsConfigurationSource source =
-
                 new UrlBasedCorsConfigurationSource();
 
         source.registerCorsConfiguration(

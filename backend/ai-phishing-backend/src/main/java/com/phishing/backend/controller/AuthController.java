@@ -165,6 +165,8 @@ public class AuthController {
                     response.getMessage()
             );
 
+            result.put("id", response.getId());
+
             // =========================
             // JWT TOKEN
             // =========================

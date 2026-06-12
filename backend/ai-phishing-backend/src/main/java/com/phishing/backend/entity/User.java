@@ -1,222 +1,85 @@
 package com.phishing.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
-
-@Table(
-        name = "users"
-)
-
-@Data
-
-@Builder
-
+@Table(name = "users")
+@Getter
+@Setter
 @NoArgsConstructor
-
 @AllArgsConstructor
-
+@Builder
+@JsonIgnoreProperties({
+        "hibernateLazyInitializer",
+        "handler"
+})
 public class User {
 
-    // =========================
-    // PRIMARY KEY
-    // =========================
-
     @Id
-
-    @GeneratedValue(
-            strategy =
-                    GenerationType.IDENTITY
-    )
-
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // =========================
-    // USER NAME
-    // =========================
-
-    @Column(
-            nullable = false,
-            length = 100
-    )
-
+    @Column(nullable = false)
     private String name;
 
-    // =========================
-    // USER EMAIL
-    // =========================
-
-    @Column(
-            unique = true,
-            nullable = false,
-            length = 150
-    )
-
+    @Column(nullable = false, unique = true)
     private String email;
 
-    // =========================
-    // USER PASSWORD
-    // =========================
-
-    @Column(
-            nullable = false,
-            length = 255
-    )
-
+    @JsonIgnore
+    @Column(nullable = false)
     private String password;
 
-    // =========================
-    // USER ROLE
-    // ROLE_USER
-    // ROLE_ADMIN
-    // =========================
-
-    @Builder.Default
-
-    @Column(
-            nullable = false,
-            length = 30
-    )
-
-    private String role = "ROLE_USER";
-
-    // =========================
-    // ACCOUNT STATUS
-    // =========================
-
-    @Builder.Default
-
     @Column(nullable = false)
+    private String role;
 
+    @Builder.Default
     private boolean active = true;
 
-    // =========================
-    // EMAIL VERIFIED
-    // =========================
+    @Builder.Default
+    private boolean enabled = true;
 
     @Builder.Default
-
-    @Column(nullable = false)
-
-    private boolean emailVerified = false;
-
-    // =========================
-    // LOGIN COUNT
-    // =========================
+    private boolean pro = false;
 
     @Builder.Default
+    private Integer scansToday = 0;
 
-    @Column(nullable = false)
-
+    @Builder.Default
     private Integer loginCount = 0;
 
-    // =========================
-    // FAILED LOGIN ATTEMPTS
-    // =========================
+    @Builder.Default
+    private Integer totalScans = 0;
 
     @Builder.Default
-
-    @Column(nullable = false)
-
-    private Integer failedLoginAttempts = 0;
-
-    // =========================
-    // ACCOUNT LOCK STATUS
-    // =========================
-
-    @Builder.Default
-
-    @Column(nullable = false)
-
     private boolean accountLocked = false;
 
-    // =========================
-    // LAST LOGIN TIME
-    // =========================
+    @Builder.Default
+    private boolean accountExpired = false;
+
+    @Builder.Default
+    private boolean credentialsExpired = false;
 
     private LocalDateTime lastLoginAt;
 
-    // =========================
-    // PASSWORD UPDATED TIME
-    // =========================
-
-    private LocalDateTime passwordUpdatedAt;
-
-    // =========================
-    // ACCOUNT CREATED TIME
-    // =========================
+    private LocalDateTime lastScanDate;
 
     @Builder.Default
-
-    @Column(nullable = false)
-
-    private LocalDateTime createdAt =
-            LocalDateTime.now();
-
-    // =========================
-    // ACCOUNT UPDATED TIME
-    // =========================
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @Builder.Default
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
-    @Column(nullable = false)
-
-    private LocalDateTime updatedAt =
-            LocalDateTime.now();
-
-    // =========================
-    // AUTO CREATE TIMESTAMP
-    // =========================
-
-    @PrePersist
-
-    public void prePersist() {
-
-        if (createdAt == null) {
-
-            createdAt =
-                    LocalDateTime.now();
-        }
-
-        if (updatedAt == null) {
-
-            updatedAt =
-                    LocalDateTime.now();
-        }
-
-        if (passwordUpdatedAt == null) {
-
-            passwordUpdatedAt =
-                    LocalDateTime.now();
-        }
-
-        if (loginCount == null) {
-
-            loginCount = 0;
-        }
-
-        if (failedLoginAttempts == null) {
-
-            failedLoginAttempts = 0;
-        }
-    }
-
-    // =========================
-    // AUTO UPDATE TIMESTAMP
-    // =========================
-
-    @PreUpdate
-
-    public void preUpdate() {
-
-        updatedAt =
-                LocalDateTime.now();
-    }
+    @JsonIgnore
+    @OneToMany(
+            mappedBy = "user",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY
+    )
+    private List<PhishingScan> scans;
 }

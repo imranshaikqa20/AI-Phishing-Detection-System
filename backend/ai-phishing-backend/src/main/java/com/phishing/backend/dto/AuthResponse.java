@@ -15,6 +15,8 @@ import lombok.NoArgsConstructor;
 
 public class AuthResponse {
 
+    private Long id;
+
     // =========================
     // RESPONSE STATUS
     // =========================

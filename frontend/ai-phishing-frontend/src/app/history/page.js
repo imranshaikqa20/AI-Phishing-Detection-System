@@ -1,18 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getScanHistory } from "../../../services/api";
-import AdminNavbar from "../../../components/AdminNavbar";
+import { useRouter } from "next/navigation";
+import Navbar from "../../components/Navbar";
+import { isAuthenticated, getScanHistory } from "../../services/api";
+import api from "../../services/api";
 
-export default function SuspiciousPage() {
+export default function HistoryPage() {
+  const router = useRouter();
 
   // STATES
-  const [allScans, setAllScans] = useState([]);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dark, setDark] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("ALL");
   const [expanded, setExpanded] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [reporting, setReporting] = useState(null);
+  const [reportMsg, setReportMsg] = useState("");
 
   // THEME SYNC
   useEffect(() => {
@@ -25,23 +31,45 @@ export default function SuspiciousPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // LOAD DATA
+  // AUTH + LOAD
   useEffect(() => {
-    fetchScans();
-  }, []);
+    if (!isAuthenticated()) { router.push("/auth/login"); return; }
+    const uid = localStorage.getItem("userId");
+    setUserId(uid ? Number(uid) : null);
+    fetchHistory();
+  }, [router]);
 
-  const fetchScans = async () => {
+  const fetchHistory = async () => {
     try {
       setLoading(true);
       const response = await getScanHistory();
-      const suspicious = (response.data || []).filter(
-        (item) => item.verdict === "PHISHING" || item.overallRiskScore >= 60
-      );
-      setAllScans(suspicious);
+      setHistory(response.data || []);
     } catch (error) {
       console.log(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // REPORT THREAT
+  const handleReport = async (scan) => {
+    if (!userId) return;
+    setReporting(scan.id);
+    setReportMsg("");
+    try {
+      await api.post("/scan/report", {
+        userId,
+        threatValue: scan.rawContent,
+        type: scan.inputType,
+        reason: `Reported from scan history. Verdict: ${scan.verdict}. Risk score: ${scan.overallRiskScore}.`,
+      });
+      setReportMsg("Threat reported successfully. Thank you!");
+      setTimeout(() => setReportMsg(""), 3000);
+    } catch (err) {
+      setReportMsg("Failed to report. Please try again.");
+      setTimeout(() => setReportMsg(""), 3000);
+    } finally {
+      setReporting(null);
     }
   };
 
@@ -70,17 +98,18 @@ export default function SuspiciousPage() {
   };
 
   // DERIVED COUNTS
-  const criticalCount = allScans.filter((s) => s.overallRiskScore >= 80).length;
-  const highCount = allScans.filter((s) => s.overallRiskScore >= 60 && s.overallRiskScore < 80).length;
-  const mediumCount = allScans.filter((s) => s.overallRiskScore >= 40 && s.overallRiskScore < 60).length;
+  const totalScans = history.length;
+  const phishingCount = history.filter((s) => s.verdict === "PHISHING").length;
+  const safeCount = history.filter((s) => s.verdict === "SAFE").length;
+  const highRiskCount = history.filter((s) => s.overallRiskScore >= 70).length;
 
-  // FILTERED + SEARCHED ROWS
-  const filtered = allScans
+  // FILTERED + SEARCHED
+  const filtered = history
     .filter((s) =>
       filter === "ALL" ? true
-      : filter === "CRITICAL" ? s.overallRiskScore >= 80
-      : filter === "HIGH" ? s.overallRiskScore >= 60 && s.overallRiskScore < 80
-      : filter === "MEDIUM" ? s.overallRiskScore >= 40 && s.overallRiskScore < 60
+      : filter === "PHISHING" ? s.verdict === "PHISHING"
+      : filter === "SAFE" ? s.verdict === "SAFE"
+      : filter === "HIGH" ? s.overallRiskScore >= 70
       : true
     )
     .filter((s) =>
@@ -100,14 +129,13 @@ export default function SuspiciousPage() {
     : "bg-white rounded-2xl p-6 shadow-md border border-gray-100";
 
   const subText = dark ? "text-white/40 text-sm" : "text-gray-500 text-sm";
-
   const statLabel = dark
     ? "text-white/40 text-xs font-semibold uppercase tracking-wide mb-3"
     : "text-gray-400 text-xs font-semibold uppercase tracking-wide mb-3";
 
   const searchInput = dark
-    ? "w-full md:w-64 px-4 py-2 rounded-xl bg-black/30 border border-white/10 text-white placeholder-white/25 outline-none focus:border-red-500/50 text-sm transition"
-    : "w-full md:w-64 px-4 py-2 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 outline-none focus:border-red-400 text-sm transition";
+    ? "w-full md:w-64 px-4 py-2 rounded-xl bg-black/30 border border-white/10 text-white placeholder-white/25 outline-none focus:border-orange-500/50 text-sm transition"
+    : "w-full md:w-64 px-4 py-2 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 outline-none focus:border-orange-400 text-sm transition";
 
   const filterPill = (active) =>
     active
@@ -125,7 +153,6 @@ export default function SuspiciousPage() {
     : "text-gray-700 text-sm font-mono truncate";
 
   const timeText = dark ? "text-xs text-white/25" : "text-xs text-gray-400";
-
   const typeBadge = dark
     ? "text-xs font-semibold px-2 py-0.5 rounded text-cyan-400 bg-cyan-500/10"
     : "text-xs font-semibold px-2 py-0.5 rounded text-cyan-600 bg-cyan-50";
@@ -142,7 +169,7 @@ export default function SuspiciousPage() {
     return (
       <div className={`${bg} flex items-center justify-center`}>
         <div className={`text-sm font-medium ${dark ? "text-white/40" : "text-gray-400"}`}>
-          Loading Threat Intelligence...
+          Loading History...
         </div>
       </div>
     );
@@ -150,23 +177,20 @@ export default function SuspiciousPage() {
 
   return (
     <div className={bg}>
+      <Navbar />
 
-      <AdminNavbar />
-
-      <div className="max-w-6xl mx-auto px-4 pb-12 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
 
         {/* PAGE HEADER */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className={`text-3xl font-bold mb-1 ${dark ? "text-white" : "text-gray-900"}`}>
-              Threat Intelligence
+              Scan History
             </h1>
             <p className={subText}>
-              AI-detected phishing, suspicious URLs, malicious payloads, and cybersecurity threats.
+              All your past scans, verdicts, risk scores, and AI analysis.
             </p>
           </div>
-
-          {/* SEARCH */}
           <input
             type="text"
             value={search}
@@ -176,53 +200,79 @@ export default function SuspiciousPage() {
           />
         </div>
 
-        {/* SEVERITY CARDS */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* REPORT SUCCESS/FAIL MESSAGE */}
+        {reportMsg && (
+          <div className={`px-4 py-3 rounded-xl text-sm font-medium ${
+            reportMsg.includes("success") || reportMsg.includes("Thank")
+              ? dark
+                ? "bg-green-500/15 border border-green-500/30 text-green-300"
+                : "bg-green-50 border border-green-200 text-green-700"
+              : dark
+              ? "bg-red-500/15 border border-red-500/30 text-red-300"
+              : "bg-red-50 border border-red-200 text-red-600"
+          }`}>
+            {reportMsg}
+          </div>
+        )}
+
+        {/* SUMMARY PILLS */}
+        <div className="flex flex-wrap gap-3">
           {[
-            { label: "Total Threats", value: allScans.length, color: "text-red-400", border: dark ? "border-red-500/15" : "border-red-100" },
-            { label: "Critical", value: criticalCount, color: "text-red-400", border: dark ? "border-red-500/15" : "border-red-100" },
-            { label: "High", value: highCount, color: "text-orange-400", border: dark ? "border-orange-500/15" : "border-orange-100" },
-            { label: "Medium", value: mediumCount, color: "text-yellow-400", border: dark ? "border-yellow-500/15" : "border-yellow-100" },
+            { label: "Total", value: totalScans, color: dark ? "text-white/70" : "text-gray-700" },
+            { label: "Phishing", value: phishingCount, color: "text-red-400" },
+            { label: "Safe", value: safeCount, color: "text-green-400" },
+            { label: "High Risk",value: highRiskCount, color: "text-orange-400" },
           ].map((s) => (
-            <div key={s.label} className={`${card} border ${s.border}`}>
-              <p className={statLabel}>{s.label}</p>
-              <p className={`text-4xl font-bold ${s.color}`}>{s.value}</p>
+            <div key={s.label} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm ${
+              dark ? "bg-white/5 border border-white/8" : "bg-white border border-gray-100 shadow-sm"
+            }`}>
+              <span className={dark ? "text-white/35 text-xs" : "text-gray-400 text-xs"}>{s.label}</span>
+              <span className={`font-bold ${s.color}`}>{s.value}</span>
             </div>
           ))}
         </div>
 
         {/* FILTER PILLS */}
         <div className="flex flex-wrap gap-2">
-          {["ALL", "CRITICAL", "HIGH", "MEDIUM"].map((f) => (
+          {["ALL", "PHISHING", "SAFE", "HIGH"].map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={filterPill(filter === f)}
             >
-              {f}
+              {f === "HIGH" ? "HIGH RISK" : f}
             </button>
           ))}
         </div>
 
-        {/* THREAT LIST */}
+        {/* HISTORY LIST */}
         {filtered.length === 0 ? (
-          <div className={`${card} text-center py-12`}>
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-3xl">🛡️</span>
-              <span className={dark ? "text-white/25 text-sm" : "text-gray-400 text-sm"}>
-                No threats found for this filter.
-              </span>
+          <div className={`${card} text-center py-16`}>
+            <div className="flex flex-col items-center gap-3">
+              <span className="text-4xl">🔍</span>
+              <p className={`text-sm ${dark ? "text-white/30" : "text-gray-400"}`}>
+                {history.length === 0
+                  ? "No scans yet. Run your first scan to see history here."
+                  : "No scans match this filter."}
+              </p>
+              {history.length === 0 && (
+                <button
+                  onClick={() => router.push("/scan")}
+                  className="mt-2 px-5 py-2 rounded-xl bg-gradient-to-r from-red-500 to-pink-600 text-white text-sm font-bold hover:scale-105 transition-all"
+                >
+                  Run AI Scan →
+                </button>
+              )}
             </div>
           </div>
         ) : (
           <div className="space-y-3">
             {filtered.map((scan) => {
-              const riskLevel  = getRiskLevel(scan.overallRiskScore);
+              const riskLevel = getRiskLevel(scan.overallRiskScore);
               const isExpanded = expanded === scan.id;
-              const truncated  =
-                scan.rawContent?.length > 80
-                  ? scan.rawContent.slice(0, 80) + "…"
-                  : scan.rawContent;
+              const truncated = scan.rawContent?.length > 80
+                ? scan.rawContent.slice(0, 80) + "…"
+                : scan.rawContent;
 
               return (
                 <div
@@ -233,7 +283,7 @@ export default function SuspiciousPage() {
                   {/* ROW MAIN */}
                   <div className="flex flex-col md:flex-row md:items-center gap-3">
 
-                    {/* LEFT — type + timestamp + content */}
+                    {/* LEFT */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className={typeBadge}>{scan.inputType}</span>
@@ -246,7 +296,7 @@ export default function SuspiciousPage() {
                       <p className={monoText}>{truncated}</p>
                     </div>
 
-                    {/* RIGHT — risk bar + badge + score + verdict + expand icon */}
+                    {/* RIGHT */}
                     <div className="flex items-center gap-3 flex-shrink-0">
 
                       {/* MINI RISK BAR */}
@@ -283,6 +333,25 @@ export default function SuspiciousPage() {
                         {scan.verdict}
                       </span>
 
+                      {/* REPORT BUTTON — only for PHISHING */}
+                      {scan.verdict === "PHISHING" && (
+                        <button
+                          disabled={reporting === scan.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReport(scan);
+                          }}
+                          className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition ${
+                            reporting === scan.id
+                              ? dark ? "bg-white/5 text-white/25 cursor-not-allowed" : "bg-gray-100 text-gray-300 cursor-not-allowed"
+                              : dark ? "bg-orange-500/15 text-orange-400 hover:bg-orange-500/25" : "bg-orange-100 text-orange-600 hover:bg-orange-200"
+                          }`}
+                          title="Report this threat to admin"
+                        >
+                          {reporting === scan.id ? "..." : "Report"}
+                        </button>
+                      )}
+
                       {/* EXPAND ICON */}
                       <span className={`text-xs transition-transform duration-200 ${
                         dark ? "text-white/25" : "text-gray-400"
@@ -294,21 +363,20 @@ export default function SuspiciousPage() {
                   </div>
 
                   {/* EXPANDED AI SUMMARY */}
-                  {isExpanded && scan.aiSummary && (
+                  {isExpanded && (
                     <div className={summaryBg} onClick={(e) => e.stopPropagation()}>
-                      <p className={`text-xs font-bold mb-2 ${dark ? "text-white/60" : "text-gray-600"}`}>
-                        AI Security Analysis
-                      </p>
-                      <pre className={summaryText}>{scan.aiSummary}</pre>
-                    </div>
-                  )}
-
-                  {/* EXPANDED — NO SUMMARY */}
-                  {isExpanded && !scan.aiSummary && (
-                    <div className={summaryBg} onClick={(e) => e.stopPropagation()}>
-                      <p className={`text-xs ${dark ? "text-white/25" : "text-gray-400"}`}>
-                        No AI summary available for this scan.
-                      </p>
+                      {scan.aiSummary ? (
+                        <>
+                          <p className={`text-xs font-bold mb-2 ${dark ? "text-white/60" : "text-gray-600"}`}>
+                            AI Security Analysis
+                          </p>
+                          <pre className={summaryText}>{scan.aiSummary}</pre>
+                        </>
+                      ) : (
+                        <p className={`text-xs ${dark ? "text-white/25" : "text-gray-400"}`}>
+                          No AI summary available for this scan.
+                        </p>
+                      )}
                     </div>
                   )}
 

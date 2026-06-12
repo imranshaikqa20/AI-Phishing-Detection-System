@@ -237,6 +237,8 @@ public class AuthService {
 
         return AuthResponse.builder()
 
+                .id(user.getId())
+
                 .message(
                         "Login Successful"
                 )
