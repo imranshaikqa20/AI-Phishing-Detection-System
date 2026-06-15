@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.phishing.backend.entity.ReportedThreat;
+import com.phishing.backend.repository.ReportedThreatRepository;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -38,6 +40,12 @@ public class ScanController {
 
     @Autowired
     private UserRepository userRepository;
+
+
+    @Autowired
+    private ReportedThreatRepository reportedThreatRepository;
+
+
 
     // ANALYZE CONTENT
     @PostMapping("/analyze")
@@ -154,6 +162,104 @@ public class ScanController {
             return ResponseEntity.status(500).build();
         }
     }
+
+
+
+
+
+    
+
+    @PostMapping("/report")
+    public ResponseEntity<?> reportThreat(
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
+
+        try {
+
+            String threatValue = String.valueOf(
+                    request.getOrDefault("threatValue", "")
+            ).trim();
+
+            String type = String.valueOf(
+                    request.getOrDefault("type", "TEXT")
+            );
+
+            String reason = String.valueOf(
+                    request.getOrDefault(
+                            "reason",
+                            "Reported by user"
+                    )
+            );
+
+            if (threatValue.isBlank()) {
+                return ResponseEntity.badRequest().body(
+                        Map.of(
+                                "success", false,
+                                "message", "Threat value is required"
+                        )
+                );
+            }
+
+            Long userId = 0L;
+
+            if (authentication != null &&
+                    authentication.getName() != null) {
+
+                Optional<User> userOptional =
+                        userRepository.findByEmail(
+                                authentication.getName()
+                        );
+
+                if (userOptional.isPresent()) {
+                    userId = userOptional.get().getId();
+                }
+            }
+
+            if (reportedThreatRepository
+                    .existsByThreatValue(threatValue)) {
+
+                return ResponseEntity.ok(
+                        Map.of(
+                                "success", true,
+                                "message", "Threat already reported"
+                        )
+                );
+            }
+
+            ReportedThreat reportedThreat =
+                    ReportedThreat.builder()
+                            .userId(userId)
+                            .threatValue(threatValue)
+                            .type(type)
+                            .reason(reason)
+                            .reportedAt(LocalDateTime.now())
+                            .build();
+
+            reportedThreatRepository.save(reportedThreat);
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "success", true,
+                            "message", "Threat reported successfully"
+                    )
+            );
+
+        } catch (Exception e) {
+
+            return ResponseEntity.status(
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            ).body(
+                    Map.of(
+                            "success", false,
+                            "message", e.getMessage()
+                    )
+            );
+        }
+    }
+
+
+
+
 
     // UPLOAD AND SCAN FILE
     @PostMapping("/upload")
