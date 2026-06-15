@@ -1,205 +1,260 @@
 import axios from "axios";
 
+// =========================================
 // API BASE URL
-const API_BASE_URL =
-process.env.NEXT_PUBLIC_API_URL ||
-"https://ai-phishing-backend-qrdn.onrender.com/api";
+// =========================================
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://ai-phishing-backend-qrdn.onrender.com/api";
+
+// =========================================
 // API INSTANCE
+// =========================================
+
 const api = axios.create({
-baseURL: API_BASE_URL,
-timeout: 15000,
-headers: {
-"Content-Type": "application/json",
-},
+  baseURL: API_BASE_URL,
+  timeout: 15000,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
+// =========================================
 // SAFE LOCAL STORAGE HELPERS
+// =========================================
+
 const isBrowser = () => typeof window !== "undefined";
 
 const getStorageItem = (key) => {
-if (!isBrowser()) return null;
-return localStorage.getItem(key);
+  if (!isBrowser()) return null;
+  return localStorage.getItem(key);
 };
 
 const setStorageItem = (key, value) => {
-if (!isBrowser()) return;
-localStorage.setItem(key, value);
+  if (!isBrowser()) return;
+  localStorage.setItem(key, value);
 };
 
 const removeStorageItem = (key) => {
-if (!isBrowser()) return;
-localStorage.removeItem(key);
+  if (!isBrowser()) return;
+  localStorage.removeItem(key);
 };
 
+// =========================================
 // REQUEST INTERCEPTOR
+// =========================================
+
 api.interceptors.request.use(
-(config) => {
-const token = getStorageItem("token");
+  (config) => {
+    const token = getStorageItem("token");
 
-```
-if (token) {
-  config.headers.Authorization = `Bearer ${token}`;
-}
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
 
-return config;
-```
-
-},
-(error) => Promise.reject(error)
+    return config;
+  },
+  (error) => Promise.reject(error)
 );
 
+// =========================================
 // RESPONSE INTERCEPTOR
+// =========================================
+
 api.interceptors.response.use(
-(response) => response,
-(error) => {
-const status = error.response?.status;
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
 
-```
-// 401 - Unauthorized
-if (status === 401) {
-  console.log("Unauthorized - clearing session");
+    if (status === 401) {
+      console.log("Unauthorized - clearing session");
 
-  clearUserSession();
+      clearUserSession();
 
-  if (isBrowser()) {
-    window.location.href = "/auth/login";
+      if (isBrowser()) {
+        window.location.href = "/auth/login";
+      }
+    }
+
+    if (status === 403) {
+      alert("Access Forbidden");
+    }
+
+    if (status === 429) {
+      alert(
+        error.response?.data?.message ||
+          "Daily Limit Reached"
+      );
+    }
+
+    if (status === 500) {
+      alert(
+        error.response?.data?.message ||
+          "Internal Server Error"
+      );
+    }
+
+    if (error.code === "ERR_NETWORK") {
+      alert(
+        "Unable to connect to server. Please try again later."
+      );
+    }
+
+    return Promise.reject(error);
   }
-}
-
-// 403 - Forbidden
-if (status === 403) {
-  alert("Access Forbidden");
-}
-
-// 429 - Rate Limit
-if (status === 429) {
-  alert(
-    error.response?.data?.message ||
-      "Daily Limit Reached"
-  );
-}
-
-// 500 - Internal Server Error
-if (status === 500) {
-  alert(
-    error.response?.data?.message ||
-      "Internal Server Error"
-  );
-}
-
-// Network Error
-if (error.code === "ERR_NETWORK") {
-  alert(
-    "Unable to connect to server. Please try again later."
-  );
-}
-
-return Promise.reject(error);
-```
-
-}
 );
 
+// =========================================
 // AUTH APIs
-export const loginUser = (loginData) =>
-api.post("/auth/login", loginData);
+// =========================================
 
-export const registerUser = (registerData) =>
-api.post("/auth/register", registerData);
+export const loginUser = (loginData) => {
+  return api.post("/auth/login", loginData);
+};
 
+export const registerUser = (registerData) => {
+  return api.post("/auth/register", registerData);
+};
+
+// =========================================
 // SCAN APIs
-export const analyzeContent = (data) =>
-api.post("/scan/analyze", data);
+// =========================================
 
-export const uploadAndScanFile = (formData) =>
-api.post("/scan/upload", formData, {
-headers: {
-"Content-Type": "multipart/form-data",
-},
-});
+export const analyzeContent = (data) => {
+  return api.post("/scan/analyze", data);
+};
 
-export const getScanHistory = () =>
-api.get("/scan/history");
+export const uploadAndScanFile = (formData) => {
+  return api.post("/scan/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
 
-export const getDashboardMetrics = () =>
-api.get("/scan/metrics");
+export const getScanHistory = () => {
+  return api.get("/scan/history");
+};
 
+export const getDashboardMetrics = () => {
+  return api.get("/scan/metrics");
+};
+
+// =========================================
+// USER MANAGEMENT APIs
+// =========================================
+
+export const getAllUsers = () => {
+  return api.get("/admin/users");
+};
+
+export const deleteUser = (id) => {
+  return api.delete(`/admin/users/${id}`);
+};
+
+export const blockUser = (id) => {
+  return api.put(`/admin/users/${id}/block`);
+};
+
+// =========================================
+// REPORTS APIs
+// =========================================
+
+export const getReports = () => {
+  return api.get("/admin/reports");
+};
+
+// =========================================
 // SAVE USER SESSION
+// =========================================
+
 export const saveUserSession = (data) => {
-console.log("LOGIN RESPONSE:", data);
+  console.log("LOGIN RESPONSE:", data);
 
-if (data.token) {
-setStorageItem("token", data.token);
-}
+  if (data.token) {
+    setStorageItem("token", data.token);
+  }
 
-const resolvedUserId =
-data.userId ?? data.id ?? null;
+  const resolvedUserId = data.userId ?? data.id ?? null;
 
-if (
-resolvedUserId !== null &&
-resolvedUserId !== undefined
-) {
-setStorageItem(
-"userId",
-String(resolvedUserId)
-);
-}
+  if (resolvedUserId !== null && resolvedUserId !== undefined) {
+    setStorageItem("userId", String(resolvedUserId));
+  }
 
-if (data.name) {
-setStorageItem("name", data.name);
-}
+  if (data.name) {
+    setStorageItem("name", data.name);
+  }
 
-if (data.email) {
-setStorageItem("email", data.email);
-}
+  if (data.email) {
+    setStorageItem("email", data.email);
+  }
 
-if (data.role) {
-setStorageItem("role", data.role);
-}
+  if (data.role) {
+    setStorageItem("role", data.role);
+  }
 
-if (
-data.loginCount !== undefined &&
-data.loginCount !== null
-) {
-setStorageItem(
-"loginCount",
-String(data.loginCount)
-);
-}
+  if (data.loginCount !== undefined && data.loginCount !== null) {
+    setStorageItem("loginCount", String(data.loginCount));
+  }
 
-if (data.lastLoginAt) {
-setStorageItem(
-"lastLoginAt",
-data.lastLoginAt
-);
-}
+  if (data.lastLoginAt) {
+    setStorageItem("lastLoginAt", data.lastLoginAt);
+  }
 };
 
-// CLEAR SESSION
+// =========================================
+// CLEAR USER SESSION
+// =========================================
+
 export const clearUserSession = () => {
-removeStorageItem("token");
-removeStorageItem("userId");
-removeStorageItem("name");
-removeStorageItem("email");
-removeStorageItem("role");
-removeStorageItem("loginCount");
-removeStorageItem("lastLoginAt");
+  removeStorageItem("token");
+  removeStorageItem("userId");
+  removeStorageItem("name");
+  removeStorageItem("email");
+  removeStorageItem("role");
+  removeStorageItem("loginCount");
+  removeStorageItem("lastLoginAt");
 };
 
-// AUTH CHECKS
-export const isAuthenticated = () =>
-!!getStorageItem("token");
+// =========================================
+// AUTH HELPERS
+// =========================================
 
-export const isAdmin = () =>
-getStorageItem("role") === "ROLE_ADMIN";
+export const isAuthenticated = () => {
+  return !!getStorageItem("token");
+};
 
+export const isAdmin = () => {
+  return getStorageItem("role") === "ROLE_ADMIN";
+};
+
+// =========================================
 // GETTERS
-export const getToken = () =>
-getStorageItem("token");
+// =========================================
 
-export const getUserId = () =>
-getStorageItem("userId");
+export const getToken = () => {
+  return getStorageItem("token");
+};
 
+export const getUserId = () => {
+  return getStorageItem("userId");
+};
+
+export const getUserName = () => {
+  return getStorageItem("name");
+};
+
+export const getUserEmail = () => {
+  return getStorageItem("email");
+};
+
+export const getUserRole = () => {
+  return getStorageItem("role");
+};
+
+// =========================================
 // EXPORT DEFAULT
+// =========================================
+
 export default api;
