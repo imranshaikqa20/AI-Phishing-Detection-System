@@ -3,6 +3,7 @@ package com.phishing.backend.security;
 import com.phishing.backend.jwt.JwtAuthenticationEntryPoint;
 import com.phishing.backend.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,6 +25,13 @@ import java.util.List;
 public class SecurityConfig {
 
     // =========================================
+    // FRONTEND URL FROM ENVIRONMENT
+    // =========================================
+
+    @Value("${frontend.url:http://localhost:3000}")
+    private String frontendUrl;
+
+    // =========================================
     // JWT FILTER
     // =========================================
 
@@ -41,7 +49,6 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-
         return new BCryptPasswordEncoder();
     }
 
@@ -51,11 +58,8 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(
-
             AuthenticationConfiguration configuration
-
     ) throws Exception {
-
         return configuration.getAuthenticationManager();
     }
 
@@ -65,155 +69,72 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-
             HttpSecurity http
-
     ) throws Exception {
 
         http
-
-                // =========================================
-                // DISABLE CSRF
-                // =========================================
-
                 .csrf(csrf -> csrf.disable())
 
-                // =========================================
-                // ENABLE CORS
-                // =========================================
-
                 .cors(cors ->
-
                         cors.configurationSource(
                                 corsConfigurationSource()
                         )
                 )
 
-                // =========================================
-                // STATELESS SESSION
-                // =========================================
-
                 .sessionManagement(session ->
-
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
 
-                // =========================================
-                // JWT EXCEPTION HANDLER
-                // =========================================
-
                 .exceptionHandling(exception ->
-
                         exception.authenticationEntryPoint(
                                 jwtAuthenticationEntryPoint
                         )
                 )
 
-                // =========================================
-                // AUTHORIZATION RULES
-                // =========================================
-
                 .authorizeHttpRequests(auth -> auth
 
-                        // =========================================
-                        // PUBLIC APIs
-                        // =========================================
-
                         .requestMatchers(
-
                                 "/api/auth/**",
-
                                 "/api/public/**",
-
                                 "/error"
-
                         ).permitAll()
 
-                        // =========================================
-                        // SWAGGER / API DOCS
-                        // =========================================
-
                         .requestMatchers(
-
                                 "/swagger-ui/**",
-
                                 "/swagger-ui.html",
-
                                 "/v3/api-docs/**"
-
                         ).permitAll()
 
-                        // =========================================
-                        // ACTUATOR
-                        // =========================================
-
                         .requestMatchers(
-
                                 "/actuator/**"
-
                         ).permitAll()
 
-                        // =========================================
-                        // STRIPE WEBHOOK
-                        // =========================================
-
                         .requestMatchers(
-
                                 "/api/payment/webhook"
-
                         ).permitAll()
 
-                        // =========================================
-                        // ADMIN APIs
-                        // =========================================
-
                         .requestMatchers(
-
                                 "/api/admin/**"
-
-                        ).hasAuthority(
-                                "ROLE_ADMIN"
-                        )
-
-                        // =========================================
-                        // USER APIs
-                        // =========================================
+                        ).hasAuthority("ROLE_ADMIN")
 
                         .requestMatchers(
-
                                 "/api/dashboard/**",
-
                                 "/api/scan/**",
-
                                 "/api/payment/**",
-
                                 "/api/profile/**"
-
                         ).hasAnyAuthority(
-
                                 "ROLE_USER",
-
                                 "ROLE_ADMIN"
                         )
-
-                        // =========================================
-                        // ALL OTHER REQUESTS
-                        // =========================================
 
                         .anyRequest()
                         .authenticated()
                 )
 
-                // =========================================
-                // JWT FILTER
-                // =========================================
-
                 .addFilterBefore(
-
                         jwtAuthenticationFilter,
-
                         UsernamePasswordAuthenticationFilter.class
                 );
 
@@ -235,12 +156,10 @@ public class SecurityConfig {
         // =========================================
 
         configuration.setAllowedOrigins(
-
                 List.of(
-
                         "http://localhost:3000",
-
-                        "http://127.0.0.1:3000"
+                        "http://127.0.0.1:3000",
+                        frontendUrl
                 )
         );
 
@@ -249,19 +168,12 @@ public class SecurityConfig {
         // =========================================
 
         configuration.setAllowedMethods(
-
                 List.of(
-
                         "GET",
-
                         "POST",
-
                         "PUT",
-
                         "DELETE",
-
                         "PATCH",
-
                         "OPTIONS"
                 )
         );
@@ -271,7 +183,6 @@ public class SecurityConfig {
         // =========================================
 
         configuration.setAllowedHeaders(
-
                 List.of("*")
         );
 
@@ -280,28 +191,20 @@ public class SecurityConfig {
         // =========================================
 
         configuration.setExposedHeaders(
-
-                List.of(
-
-                        "Authorization"
-                )
+                List.of("Authorization")
         );
 
         // =========================================
         // ALLOW CREDENTIALS
         // =========================================
 
-        configuration.setAllowCredentials(
-                true
-        );
+        configuration.setAllowCredentials(true);
 
         // =========================================
         // PREFLIGHT CACHE
         // =========================================
 
-        configuration.setMaxAge(
-                3600L
-        );
+        configuration.setMaxAge(3600L);
 
         // =========================================
         // REGISTER CONFIG
@@ -311,9 +214,7 @@ public class SecurityConfig {
                 new UrlBasedCorsConfigurationSource();
 
         source.registerCorsConfiguration(
-
                 "/**",
-
                 configuration
         );
 
