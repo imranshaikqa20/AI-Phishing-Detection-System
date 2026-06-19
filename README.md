@@ -107,19 +107,33 @@ After the AI evaluation is completed, the generated findings are stored in the a
 
 
 ## Deployment & Setup
-Deployment Notes: Hosted on the Render Free Tier. Note that the service may "spin down" after 15 minutes of inactivity; expect a ~60-second delay on the initial request.
 
-### Installation: Bash
-git clone https://github.com/[YOUR-USERNAME]/[YOUR-PROJECT-NAME].git
+This project is deployed on **Render Cloud Platform** using a Spring Boot backend, PostgreSQL database, and a modern web frontend. The application is configured for seamless cloud deployment with environment-based configuration management. User data, scan results, and payment information are securely stored in PostgreSQL. The platform integrates with Google Gemini AI for threat analysis and Stripe for payment processing. Render automatically builds and deploys the latest code from GitHub whenever changes are pushed to the repository. On the free tier, services may enter a sleep state after periods of inactivity, resulting in a short startup delay for the first request.
 
-### Configure .env
-DB_URL=...
-STRIPE_KEY=...
-GEMINI_API_KEY=...
-### Build
+### Installation
+
+```bash
+git clone https://github.com/your-username/AI-Phishing-Detection-System.git
+cd AI-Phishing-Detection-System
+```
+
+### Configure Environment Variables
+
+```env
+DB_URL=your_database_url
+DB_USERNAME=your_database_username
+DB_PASSWORD=your_database_password
+GEMINI_API_KEY=your_gemini_api_key
+STRIPE_SECRET_KEY=your_stripe_secret_key
+JWT_SECRET=your_jwt_secret
+```
+
+### Build & Run
+
+```bash
 ./mvnw clean install
 ./mvnw spring-boot:run
-
+```
 ## Work Flow Architecture:
 
 <img src="./PhishGuard-Screenshot/Work Flow of Ai-Analysis project.png" width="800"/>
