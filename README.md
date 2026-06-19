@@ -40,7 +40,7 @@ The system integrates with the Gemini API to perform intelligent phishing threat
 
 ## Authentication & Security
 
-### WT Implementation
+### JWT Implementation
 The system uses JSON Web Tokens (JWT) to provide secure and stateless authentication for users. After successful login, a signed token is generated and returned to the client. This token is included in subsequent API requests for identity verification. JWT eliminates the need for server-side session storage, improving scalability. Cryptographic signatures ensure that tokens cannot be altered or forged by unauthorized users.
 
 ### BCrypt Hashing
@@ -60,17 +60,51 @@ The backend service retrieves the pending scan and sends the content to the Gemi
 After the AI evaluation is completed, the generated findings are stored in the ai_analysis_details table. The system records threat classifications, risk scores, and supporting analysis data. The corresponding scan record is updated from "PENDING" to "COMPLETED" status. Users can view the final assessment through the dashboard interface. These reports provide actionable insights to help identify and mitigate potential phishing threats.
 
 
-
 ##  Monetization Logic
-Freemium Model: Users receive 100 free scans.
-Pro Upgrade: Integrated with Stripe Checkout for secure $10 one-time payments.
-Automated Provisioning: Uses Stripe Webhooks to verify payment and automatically update user entitlements in the database.
 
-##  Demo Day Walkthrough
-1.The Problem: Demonstrate a user dashboard near their scan limit (99/100).
-2.The Action: Submit a new scan and show the system blocking/limiting the request.
-3.The Monetization: Click "Upgrade," showcase the Stripe Checkout flow, and highlight the webhook-driven credit update.
-4.The Admin Power: Log in as an Admin to navigate the Report and Delete modules, demonstrating database maintenance.
+### Freemium Model
+- Every new user receives **100 free scans** upon registration.
+- Free scans can be used for URL, text, and file phishing analysis.
+
+### Pro Upgrade
+- Users can upgrade to a premium plan through **Stripe Checkout**.
+- A one-time payment of **$10** unlocks additional scan credits and premium features.
+
+### Automated Provisioning
+- Stripe Webhooks verify successful payments in real time.
+- User entitlements and scan limits are automatically updated in the database after payment confirmation.
+
+---
+
+## Demo Day Walkthrough
+
+### 1. User Registration & Login
+- Register a new account or log in with existing credentials.
+- Access the user dashboard.
+
+### 2. Phishing Detection
+- Submit a URL, email text, or file for analysis.
+- View the AI-generated threat assessment and risk score.
+
+### 3. Scan Limit Demonstration
+- Show a user account approaching the free scan limit (e.g., 99/100 scans).
+- Submit another scan and demonstrate the system enforcing the usage limit.
+
+### 4. Premium Upgrade Flow
+- Click the **Upgrade** button.
+- Complete the Stripe Checkout process.
+- Demonstrate automatic credit updates through Stripe Webhooks.
+
+### 5. Admin Dashboard
+- Log in as an administrator.
+- Review phishing reports and security analytics.
+- Monitor user activity and system statistics.
+
+### 6. Threat Management
+- Demonstrate the Report, Block, History, and Delete modules.
+- Show how administrators can manage and maintain platform security.
+
+
 
 ## Deployment & Setup
 Deployment Notes: Hosted on the Render Free Tier. Note that the service may "spin down" after 15 minutes of inactivity; expect a ~60-second delay on the initial request.
@@ -90,10 +124,28 @@ GEMINI_API_KEY=...
 
 <img src="./PhishGuard-Screenshot/Work Flow of Ai-Analysis project.png" width="800"/>
 
-  User Entry & Authentication: The flow begins with the Auth Module (Signup/Login), issuing a JWT.
-  The Core Pipeline (Scan & Analysis): This shows how a threat is ingested, verified against quotas by the Metrics Module, and then processed through Persistence, the Analysis Module (connecting to the Gemini API), and finally the Report Module.
-  Monetization Flow: It clearly illustrates how the Metrics Module acts as a gatekeeper, redirecting users who hit the limit to the Upgrade Module (Stripe Checkout) and then showing the webhook loop that automatically updates their credits.
-  Admin Workflow: A separate path shows how an Administrator accesses the data through the Admin Panel, enabling actions from the Block, Delete, and History modules to maintain the system.
+
+### User Entry & Authentication
+- The workflow begins when a user registers or logs in through the **Auth Module**.
+- Upon successful authentication, the system generates a **JWT (JSON Web Token)** to securely manage user sessions and authorize future requests.
+
+### Core Threat Detection Pipeline
+- Users submit URLs, text, or files through the **Scan Module** for phishing analysis.
+- The **Metrics Module** validates the user's available scan quota before processing the request.
+- Valid requests are stored and forwarded to the **Analysis Module**, which leverages the **Google Gemini API** for AI-powered threat detection.
+- The generated results, risk scores, and evidence are then saved and presented through the **Report Module**.
+
+### Monetization Workflow
+- The **Metrics Module** continuously tracks scan usage and acts as a gatekeeper for free-tier limits.
+- When a user exhausts their available scans, the system redirects them to the **Upgrade Module**.
+- Users can purchase additional scan credits securely through **Stripe Checkout**.
+- After successful payment, **Stripe Webhooks** automatically update the user's credits and subscription details in the database.
+
+### Administrative Workflow
+- Administrators access the platform through the **Admin Dashboard**.
+- The **History Module** provides visibility into all scan activities and security events.
+- The **Block Module** enables administrators to restrict malicious URLs, domains, or content.
+- The **Delete Module** supports maintenance operations and cleanup of obsolete or unwanted records, ensuring efficient system management.
 
 ## Screenshots Of Project:-
 https://github.com/imranshaikqa20/AI-Phishing-Detection-System/tree/main/PhishGuard-Screenshot
